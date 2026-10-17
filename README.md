@@ -1,5 +1,7 @@
 # Web Security Lab — SQLi & OWASP
 
+[![Lab demo](https://github.com/dan4x/security-lab/actions/workflows/demo.yml/badge.svg)](https://github.com/dan4x/security-lab/actions/workflows/demo.yml)
+
 A **deliberately vulnerable** lab for studying and practicing the
 exploitation and remediation of web vulnerabilities, focused on **SQL
 Injection** and the **OWASP Top 10** (Web / API / LLM). Everything runs
@@ -15,15 +17,36 @@ Injection** and the **OWASP Top 10** (Web / API / LLM). Everything runs
 |---|---|
 | `app.py` | Intentionally vulnerable Flask app (SQLi, broken access control, misconfig). |
 | `make_fixture.py` | Generates `challenge.db`, a synthetic database that simulates a payment acquirer (realistic volume; fictitious data). |
+| `exploit_sqli_user.py` | Original, self-contained exploit: confirms the injection, enumerates the schema, and extracts the flag. |
+| `run_demo.sh` | One-command demo: sets up the environment, starts the app, runs the exploit, and tears everything down. |
 | `.claude/skills/vuln-exploit/` | Claude Code skill: audits the code guided by the OWASP Top 10 and generates original exploits. |
 | `CLAUDE.md` | Lab conventions and notes about the vulnerable code. |
 
-## How to run
+## Quick start
+
+The fastest way to see it work end-to-end — sets up the venv, generates the
+fixture, starts the app, runs the exploit, and stops everything:
+
+```bash
+./run_demo.sh
+```
+
+Expected output ends with something like:
+
+```
+[+] Flag found in table 'internal_config': CW{...}
+[+] Total time: 0.2Xs
+```
+
+This exact flow also runs automatically in CI on every push (see the badge
+above), so you can verify it works without even cloning the repo.
+
+## Manual / step-by-step run
 
 ```bash
 # 1. Environment
 python3 -m venv .venv && source .venv/bin/activate
-pip install Flask requests
+pip install -r requirements.txt
 
 # 2. Generate the test database
 python make_fixture.py            # creates challenge.db
@@ -38,10 +61,16 @@ Test an endpoint:
 curl -G "http://127.0.0.1:4001/api/user" --data-urlencode "username=alice'"
 ```
 
-If the response leaks a SQLite error, the injection is confirmed. The goal
-of the exercise is to write an original script that enumerates the schema
-and extracts the target value in the format `CW{...}`, hidden somewhere in
-the database.
+If the response leaks a SQLite error, the injection is confirmed. Then, in
+a separate terminal, run the exploit:
+
+```bash
+python exploit_sqli_user.py
+```
+
+It enumerates the schema and extracts the target value in the format
+`CW{...}`, hidden somewhere in the database — no table/column name is
+assumed ahead of time.
 
 ## Vulnerabilities in the lab (for study)
 
